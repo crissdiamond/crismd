@@ -1,0 +1,50 @@
+{
+  "name": "crismd",
+  "version": "1.0.0",
+  "description": "A premium, multitab markdown viewer.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "keywords": [
+    "markdown",
+    "viewer",
+    "multitab"
+  ],
+  "author": "Diamond",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "marked": "^15.0.3"
+  },
+  "build": {
+    "appId": "com.diamond.crismd",
+    "productName": "CrisMD",
+    "files": [
+      "src/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

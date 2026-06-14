@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrisMD</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Custom Windows Titlebar -->
+  <div id="titlebar">
+    <div class="titlebar-drag-region"></div>
+    <div class="app-logo">
+      <svg class="logo-icon" viewBox="0 0 24 24" width="16" height="16">
+        <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+      </svg>
+      <span class="app-name">CrisMD</span>
+    </div>
+    <div id="window-controls">
+      <button class="control-btn" id="min-btn" title="Minimize">
+        <svg viewBox="0 0 10 1" width="10" height="1">
+          <line x1="0" y1="0.5" x2="10" y2="0.5" stroke="currentColor" stroke-width="1"/>
+        </svg>
+      </button>
+      <button class="control-btn" id="max-btn" title="Maximize">
+        <svg viewBox="0 0 10 10" width="10" height="10">
+          <rect x="1" y="1" width="8" height="8" stroke="currentColor" stroke-width="1" fill="none"/>
+        </svg>
+      </button>
+      <button class="control-btn close-btn" id="close-btn" title="Close">
+        <svg viewBox="0 0 10 10" width="10" height="10">
+          <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1"/>
+          <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="app-container">
+    <!-- Sidebar Panel -->
+    <aside id="sidebar" class="sidebar-visible">
+      <div class="sidebar-header">
+        <h3>Explorer</h3>
+        <button id="sidebar-close" class="icon-btn" title="Collapse Sidebar">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="sidebar-actions">
+        <button id="open-file-btn" class="primary-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          Open MD File(s)
+        </button>
+      </div>
+
+      <!-- Recent Files list -->
+      <div class="sidebar-section">
+        <div class="section-title">Recent Files</div>
+        <ul id="recent-files-list" class="sidebar-list">
+          <li class="empty-list-msg">No recent files</li>
+        </ul>
+      </div>
+
+      <!-- Document Outline / TOC -->
+      <div class="sidebar-section outline-section">
+        <div class="section-title">Table of Contents</div>
+        <div id="document-outline" class="outline-container">
+          <div class="empty-outline-msg">No document loaded</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main id="workspace">
+      <!-- Toolbar containing tabs & general actions -->
+      <div id="workspace-header">
+        <button id="sidebar-toggle" class="icon-btn" title="Toggle Sidebar">
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+          </svg>
+        </button>
+
+        <!-- Tabs Container -->
+        <div id="tabs-container">
+          <!-- Dynamically populated tabs -->
+        </div>
+
+        <button id="new-tab-btn" class="icon-btn" title="Open File in New Tab">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Controls Panel (Zoom, Find, Export) -->
+      <div id="controls-panel">
+        <div class="zoom-controls">
+          <button id="zoom-out-btn" class="icon-btn text-btn" title="Zoom Out (Ctrl+-)">A-</button>
+          <span id="zoom-level">100%</span>
+          <button id="zoom-in-btn" class="icon-btn text-btn" title="Zoom In (Ctrl++)">A+</button>
+          <button id="zoom-reset-btn" class="text-link-btn" title="Reset Zoom (Ctrl+0)">Reset</button>
+        </div>
+
+        <div class="action-controls">
+          <button id="theme-toggle-btn" class="icon-btn" title="Toggle Light/Dark Theme">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <!-- Default is Sun icon, JS will toggle Moon -->
+              <path id="theme-icon-path" fill="currentColor" d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zm-12.37 12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41z"/>
+            </svg>
+          </button>
+          <button id="search-toggle-btn" class="icon-btn" title="Find in Document (Ctrl+F)">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+          </button>
+          <button id="print-btn" class="icon-btn" title="Print / Export to PDF">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Find Panel (Hidden by default) -->
+      <div id="search-panel" class="hidden">
+        <input type="text" id="search-input" placeholder="Find text..." />
+        <span id="search-results-count">0/0</span>
+        <button id="search-prev-btn" class="icon-btn" title="Previous Match (Shift+Enter)">
+          <svg viewBox="0 0 24 24" width="14" height="14">
+            <path fill="currentColor" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+          </svg>
+        </button>
+        <button id="search-next-btn" class="icon-btn" title="Next Match (Enter)">
+          <svg viewBox="0 0 24 24" width="14" height="14">
+            <path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/>
+          </svg>
+        </button>
+        <button id="search-close-btn" class="icon-btn" title="Close (Esc)">
+          <svg viewBox="0 0 24 24" width="14" height="14">
+            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Viewer Container -->
+      <div id="viewer-container">
+        <!-- Content Render Area -->
+        <div id="markdown-body" class="markdown-body">
+          <!-- Dynamic Markdown Rendered HTML goes here -->
+        </div>
+
+        <!-- Empty State UI -->
+        <div id="empty-state" class="empty-state-visible">
+          <div class="empty-state-card">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" width="64" height="64">
+              <path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+            </svg>
+            <h2>Welcome to CrisMD</h2>
+            <p>A beautiful, multitab Markdown viewer.</p>
+            <div class="empty-state-buttons">
+              <button id="empty-open-btn" class="primary-btn">
+                Select Markdown Files
+              </button>
+            </div>
+            <p class="drag-hint">Or drag & drop Markdown files here to view</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="lib/marked.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
