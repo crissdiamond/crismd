@@ -61,6 +61,7 @@ function createWindow() {
     frame: false, // frameless window for modern, custom-designed UI
     transparent: false,
     backgroundColor: '#0a0a0c',
+    icon: path.join(__dirname, 'assets/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
