@@ -15,11 +15,14 @@
   "author": "Diamond",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^33.2.0",
-    "electron-builder": "^24.13.3"
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3"
   },
   "dependencies": {
-    "marked": "^15.0.3"
+    "dompurify": "^3.4.11",
+    "marked": "^18.0.6",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "build": {
     "appId": "com.diamond.crismd",
@@ -35,11 +38,35 @@
     "win": {
       "target": [
         {
-          "target": "dir",
-          "arch": ["x64"]
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
         }
-      ]
+      ],
+      "icon": "build/icon.png"
     },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.exe"
+    },
+    "fileAssociations": [
+      {
+        "ext": "md",
+        "name": "Markdown Document",
+        "role": "Viewer"
+      },
+      {
+        "ext": "markdown",
+        "name": "Markdown Document",
+        "role": "Viewer"
+      }
+    ],
     "nsis": {
       "oneClick": true,
       "allowToChangeInstallationDirectory": false,

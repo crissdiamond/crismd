@@ -427,6 +427,56 @@ button, input {
   gap: 8px;
 }
 
+/* Edit Mode (WYSIWYG) Toolbar */
+#edit-toolbar {
+  height: 44px;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+#edit-toolbar.hidden {
+  display: none;
+}
+
+.edit-cmd-btn {
+  min-width: 32px;
+  width: auto;
+  padding: 0 8px;
+}
+
+.edit-toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background-color: var(--border-color);
+  margin: 0 6px;
+}
+
+.edit-toolbar-spacer {
+  flex: 1;
+}
+
+.edit-save-btn {
+  padding: 6px 16px;
+}
+
+body.editing .markdown-body {
+  outline: 1px dashed var(--accent);
+  outline-offset: 16px;
+  user-select: text;
+  cursor: text;
+  caret-color: var(--accent);
+}
+
+body.editing #edit-toggle-btn {
+  color: var(--accent);
+  background-color: var(--accent-light);
+}
+
 /* Search (Find in page) Panel */
 #search-panel {
   height: 40px;
@@ -823,7 +873,7 @@ button, input {
     background: white;
     color: black;
   }
-  #titlebar, #sidebar, #workspace-header, #controls-panel, #search-panel {
+  #titlebar, #sidebar, #workspace-header, #controls-panel, #search-panel, #edit-toolbar {
     display: none !important;
   }
   #app-container {

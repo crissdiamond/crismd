@@ -9,6 +9,7 @@ A premium, multitab Markdown viewer built with Electron. CrisMD offers a sleek, 
 - **Modern UI**: Sleek frameless design with responsive layouts and fluid transitions.
 - **Light & Dark Themes**: Toggle between dark and light modes with persistent preference storage.
 - **Zoom Controls**: Easily adjust text size with zoom-in, zoom-out, and reset options.
+- **Minimal WYSIWYG Editing**: Toggle edit mode (Ctrl+E), format with a lightweight toolbar, and save back to Markdown (Ctrl+S) — no Markdown syntax knowledge needed.
 - **Find in Page**: Search through documents with highlighting and navigation.
 - **Drag & Drop**: Drag Markdown files directly into the window to open them.
 - **Print / PDF Export**: Clean styling for printing or saving to PDF.

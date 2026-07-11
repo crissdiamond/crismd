@@ -1,8 +1,10 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   openFiles: () => ipcRenderer.invoke('show-open-dialog'),
   readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
+  saveFile: (filePath, content) => ipcRenderer.invoke('save-file', filePath, content),
+  getPathForFile: (file) => webUtils.getPathForFile(file),
   getStartupFile: () => ipcRenderer.invoke('get-startup-file'),
   onOpenFile: (callback) => {
     const subscription = (event, filePath) => callback(filePath);

@@ -7,6 +7,8 @@ let recentFiles = [];
 let zoomFactor = 1.0;
 let currentSearchMatches = [];
 let activeSearchIndex = -1;
+let isEditing = false;
+let editSnapshot = '';
 
 // DOM Elements
 const sidebar = document.getElementById('sidebar');
@@ -44,6 +46,12 @@ const searchCloseBtn = document.getElementById('search-close-btn');
 
 // Print Control
 const printBtn = document.getElementById('print-btn');
+
+// Edit Controls
+const editToggleBtn = document.getElementById('edit-toggle-btn');
+const editToolbar = document.getElementById('edit-toolbar');
+const editSaveBtn = document.getElementById('edit-save-btn');
+const editCancelBtn = document.getElementById('edit-cancel-btn');
 
 // Theme Controls
 const themeToggleBtn = document.getElementById('theme-toggle-btn');
@@ -132,6 +140,25 @@ function setupEventListeners() {
     });
   }
 
+  // Edit mode events
+  editToggleBtn.addEventListener('click', () => {
+    if (isEditing) {
+      cancelEdit();
+    } else {
+      enterEditMode();
+    }
+  });
+  editSaveBtn.addEventListener('click', saveEdit);
+  editCancelBtn.addEventListener('click', cancelEdit);
+
+  document.querySelectorAll('.edit-cmd-btn').forEach(btn => {
+    // mousedown + preventDefault keeps focus and selection inside the editor
+    btn.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+    });
+  });
+
   // Search panel events
   searchToggleBtn.addEventListener('click', toggleSearchPanel);
   searchCloseBtn.addEventListener('click', hideSearchPanel);
@@ -178,6 +205,21 @@ function setupEventListeners() {
       e.preventDefault();
       showSearchPanel();
     }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'e') { // Ctrl + E
+      e.preventDefault();
+      if (isEditing) {
+        cancelEdit();
+      } else {
+        enterEditMode();
+      }
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { // Ctrl + S
+      e.preventDefault();
+      if (isEditing) saveEdit();
+    }
+    if (e.key === 'Escape' && isEditing) {
+      cancelEdit();
+    }
   });
 
   // Drag and Drop support
@@ -193,8 +235,10 @@ function setupEventListeners() {
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       for (const file of files) {
-        // Read file via main process
-        window.electronAPI.readFile(file.path).then(result => {
+        // File.path was removed in Electron 32+; resolve via webUtils in preload
+        const filePath = window.electronAPI.getPathForFile(file);
+        if (!filePath) continue;
+        window.electronAPI.readFile(filePath).then(result => {
           if (result.success) {
             openFileContent(result.name, result.path, result.content);
           }
@@ -206,6 +250,8 @@ function setupEventListeners() {
 
 // Tab Management
 function openFileContent(name, filePath, content) {
+  if (!confirmLeaveEditMode()) return;
+
   // Check if already open
   const existingTab = tabs.find(t => t.path === filePath);
   if (existingTab) {
@@ -271,6 +317,8 @@ function renderTabElement(tab) {
 }
 
 function switchTab(tabId) {
+  if (isEditing && tabId !== activeTabId && !confirmLeaveEditMode()) return;
+
   // Save scroll of old tab
   if (activeTabId) {
     const oldTab = tabs.find(t => t.id === activeTabId);
@@ -326,6 +374,8 @@ function closeTab(tabId) {
   const tabIndex = tabs.findIndex(t => t.id === tabId);
   if (tabIndex === -1) return;
 
+  if (tabId === activeTabId && !confirmLeaveEditMode()) return;
+
   // Remove tab element from DOM
   const tabEl = document.getElementById(tabId);
   if (tabEl) tabEl.remove();
@@ -346,15 +396,23 @@ function closeTab(tabId) {
 }
 
 // Markdown Rendering
+function sanitizeHtml(html) {
+  // Markdown may embed raw HTML; strip anything executable before injecting
+  return window.DOMPurify ? DOMPurify.sanitize(html) : html;
+}
+
 function renderMarkdown(markdownText) {
   if (!window.marked) {
-    markdownBody.innerHTML = `<pre>${markdownText}</pre>`;
+    const pre = document.createElement('pre');
+    pre.textContent = markdownText;
+    markdownBody.innerHTML = '';
+    markdownBody.appendChild(pre);
     return;
   }
-  
+
   try {
     // Parse Markdown to HTML
-    let htmlContent = window.marked.parse(markdownText);
+    let htmlContent = sanitizeHtml(window.marked.parse(markdownText));
     markdownBody.innerHTML = htmlContent;
     
     // Enhance rendered HTML
@@ -417,6 +475,88 @@ function enhanceMarkdownDOM() {
   });
 }
 
+// WYSIWYG Editing
+let turndownService = null;
+
+function getTurndown() {
+  if (!turndownService && window.TurndownService) {
+    turndownService = new TurndownService({
+      headingStyle: 'atx',
+      codeBlockStyle: 'fenced',
+      bulletListMarker: '-'
+    });
+    if (window.turndownPluginGfm) {
+      turndownService.use(turndownPluginGfm.gfm);
+    }
+  }
+  return turndownService;
+}
+
+function enterEditMode() {
+  if (isEditing || !activeTabId || !window.marked || !getTurndown()) return;
+  const tab = tabs.find(t => t.id === activeTabId);
+  if (!tab) return;
+
+  hideSearchPanel();
+
+  // Re-render without viewer enhancements (copy buttons, wrappers) so the
+  // edited DOM converts cleanly back to Markdown
+  markdownBody.innerHTML = sanitizeHtml(window.marked.parse(tab.content));
+  markdownBody.contentEditable = 'true';
+  editSnapshot = markdownBody.innerHTML;
+
+  isEditing = true;
+  document.body.classList.add('editing');
+  editToolbar.classList.remove('hidden');
+  markdownBody.focus();
+}
+
+function exitEditMode() {
+  isEditing = false;
+  editSnapshot = '';
+  markdownBody.contentEditable = 'false';
+  document.body.classList.remove('editing');
+  editToolbar.classList.add('hidden');
+
+  const tab = tabs.find(t => t.id === activeTabId);
+  if (tab) {
+    renderMarkdown(tab.content);
+    generateOutline();
+  }
+}
+
+function saveEdit() {
+  const tab = tabs.find(t => t.id === activeTabId);
+  if (!tab) return;
+
+  const markdown = getTurndown().turndown(markdownBody.innerHTML);
+  window.electronAPI.saveFile(tab.path, markdown).then(result => {
+    if (result && result.success) {
+      tab.content = markdown;
+      exitEditMode();
+    } else {
+      alert(`Failed to save file: ${result ? result.error : 'unknown error'}`);
+    }
+  });
+}
+
+function cancelEdit() {
+  if (markdownBody.innerHTML !== editSnapshot && !confirm('Discard unsaved changes?')) {
+    return;
+  }
+  exitEditMode();
+}
+
+// Returns false if the user chose to stay in edit mode
+function confirmLeaveEditMode() {
+  if (!isEditing) return true;
+  if (markdownBody.innerHTML !== editSnapshot && !confirm('Discard unsaved changes?')) {
+    return false;
+  }
+  exitEditMode();
+  return true;
+}
+
 // Outline / Table of Contents
 function generateOutline() {
   documentOutline.innerHTML = '';
@@ -469,6 +609,7 @@ function applyZoom() {
 
 // Find in Page (Search)
 function showSearchPanel() {
+  if (isEditing) return; // Highlight spans would get saved into the document
   searchPanel.classList.remove('hidden');
   searchInput.focus();
   searchInput.select();
@@ -654,8 +795,10 @@ function renderRecentFiles() {
       <svg viewBox="0 0 24 24" width="14" height="14" style="color: var(--accent);">
         <path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
       </svg>
-      <span>${file.name}</span>
     `;
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = file.name;
+    li.appendChild(nameSpan);
     
     li.addEventListener('click', () => {
       window.electronAPI.readFile(file.path).then(result => {

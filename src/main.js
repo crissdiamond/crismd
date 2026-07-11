@@ -109,6 +109,19 @@ ipcMain.handle('read-file', async (event, filePath) => {
   }
 });
 
+// IPC Handler - Save file content
+ipcMain.handle('save-file', async (event, filePath, content) => {
+  try {
+    fs.writeFileSync(path.resolve(filePath), content, 'utf8');
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
 // IPC Handler - Open File Dialog
 ipcMain.handle('show-open-dialog', async () => {
   if (!mainWindow) return null;
